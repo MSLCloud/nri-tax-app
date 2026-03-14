@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { saveFunds, saveCalculation } from '../utils/supabaseClient';
 
-export default function MFUpload({ onNavigate, user }) {
+export default function MFUpload({ onNavigate, user, initialFunds, onFundsLoaded }) {
   const [funds, setFunds] = useState([]);
   const [formData, setFormData] = useState({
     schemeName: '',
@@ -10,6 +10,14 @@ export default function MFUpload({ onNavigate, user }) {
     costBasis: ''
   });
   const [loading, setLoading] = useState(false);
+
+  // Pre-populate funds when coming from FileUpload (CSV/Excel)
+  useEffect(() => {
+    if (initialFunds && initialFunds.length > 0) {
+      setFunds(initialFunds);
+      if (onFundsLoaded) onFundsLoaded();
+    }
+  }, [initialFunds]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

@@ -8,7 +8,7 @@ export default function FileUpload({ onUpload, onNavigate }) {
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
-      const validTypes = ['text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+      const validTypes = ['text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/plain'];
       if (validTypes.includes(selectedFile.type)) {
         setFile(selectedFile);
         setError('');
@@ -41,21 +41,43 @@ export default function FileUpload({ onUpload, onNavigate }) {
 
       const result = await response.json();
 
-      if (result.success) {
-        alert('File uploaded successfully!');
-        
-        // Parse data and populate funds
-        const parsedFunds = result.data.map(row => ({
-          schemeName: row['Scheme Name'] || row['scheme_name'] || 'Unknown',
-          units: row['Units'] || row['units'] || '0',
-          navPerUnit: row['NAV'] || row['nav'] || '0',
-          costBasis: row['Cost Basis'] || row['cost_basis'] || '0'
-        }));
+      if (!response.ok) {
+        setError(result.error || `Upload failed (${response.status})`);
+        setUploading(false);
+        return;
+      }
 
-        onUpload(parsedFunds);
+      if (result.success) {
+        if (!result.data || !Array.isArray(result.data)) {
+          setError(result.message || 'Excel parsing coming soon. Please use CSV for now.');
+          setUploading(false);
+          return;
+        }
+        const count = result.data.length;
+        alert(`File uploaded successfully! ${count} fund(s) parsed.`);
+        
+        // Backend returns standardized: schemeName, units, nav, costBasis, fmvUsd (optional)
+        const parsedFunds = result.data.map(row => {
+          const units = parseFloat(String(row.units || '0').replace(/,/g, '')) || 0;
+          const nav = parseFloat(String(row.nav || '0').replace(/,/g, '')) || 0;
+          const costBasis = parseFloat(String(row.costBasis || '0').replace(/,/g, '')) || 0;
+          // FMV: use provided fmvUsd, or compute as units * nav (assume same currency as cost basis)
+          const fmv = row.fmvUsd ? parseFloat(String(row.fmvUsd).replace(/,/g, '')) : units * nav;
+          const gain = fmv - costBasis;
+          return {
+            schemeName: row.schemeName || 'Unknown',
+            units: String(units),
+            navPerUnit: String(nav),
+            costBasis: String(costBasis),
+            fmv: fmv.toFixed(2),
+            gain: gain.toFixed(2)
+          };
+        });
+
+        if (onUpload) onUpload(parsedFunds);
         onNavigate('upload');
       } else {
-        setError('Error uploading file');
+        setError(result.error || 'Error uploading file');
       }
     } catch (error) {
       console.error('Error uploading file:', error);

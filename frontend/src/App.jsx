@@ -11,6 +11,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [loading, setLoading] = useState(true);
+  const [uploadedFunds, setUploadedFunds] = useState(null);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -64,10 +65,10 @@ function App() {
         />
       )}
       {currentPage === 'upload' && (
-        <MFUpload onNavigate={handleNavigate} user={user} />
+        <MFUpload onNavigate={handleNavigate} user={user} initialFunds={uploadedFunds} onFundsLoaded={() => setUploadedFunds(null)} />
       )}
       {currentPage === 'fileupload' && (
-        <FileUpload onNavigate={handleNavigate} />
+        <FileUpload onNavigate={handleNavigate} onUpload={setUploadedFunds} />
       )}
       {currentPage === 'results' && (
         <TaxResults onNavigate={handleNavigate} user={user} />
