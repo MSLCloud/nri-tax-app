@@ -5,19 +5,19 @@ export default function TaxResults({ onNavigate }) {
   const [calculations, setCalculations] = useState(null);
 
   useEffect(() => {
+    const savedCalculation = localStorage.getItem('calculation');
     const savedFunds = localStorage.getItem('funds');
-    if (savedFunds) {
-      const parsedFunds = JSON.parse(savedFunds);
-      setFunds(parsedFunds);
+    
+    if (savedCalculation && savedFunds) {
+      const calc = JSON.parse(savedCalculation);
+      setFunds(JSON.parse(savedFunds));
       
-      const totalMTM = parsedFunds.reduce((sum, f) => sum + parseFloat(f.gain), 0);
-      const federalTax = totalMTM * 0.32;
-      
+      // Use calculation from backend
       setCalculations({
-        totalMTM,
-        federalTax,
-        niit: totalMTM * 0.038,
-        totalTax: federalTax + (totalMTM * 0.038)
+        totalMTM: calc.summary.totalMTM,
+        federalTax: calc.summary.federalTax,
+        niit: calc.summary.niit,
+        totalTax: calc.summary.totalTax
       });
     }
   }, []);

@@ -145,12 +145,25 @@ export default function MFUpload({ onNavigate }) {
             Cancel
           </button>
           <button
-            onClick={() => {
-              if (funds.length > 0) {
-                localStorage.setItem('funds', JSON.stringify(funds));
-                onNavigate('results');
-              }
-            }}
+            onClick={async () => {
+                if (funds.length > 0) {
+                  try {
+                    const response = await fetch('http://localhost:5000/api/calculate/mtm', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ funds })
+                    });
+                    
+                    const result = await response.json();
+                    localStorage.setItem('funds', JSON.stringify(funds));
+                    localStorage.setItem('calculation', JSON.stringify(result));
+                    onNavigate('results');
+                  } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error calculating tax');
+                  }
+                }
+              }}
             disabled={funds.length === 0}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold disabled:opacity-50"
           >
