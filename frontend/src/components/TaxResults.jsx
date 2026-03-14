@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-export default function TaxResults({ onNavigate }) {
+export default function TaxResults({ onNavigate, user }) {
   const [funds, setFunds] = useState([]);
   const [calculations, setCalculations] = useState(null);
 
@@ -12,7 +12,6 @@ export default function TaxResults({ onNavigate }) {
       const calc = JSON.parse(savedCalculation);
       setFunds(JSON.parse(savedFunds));
       
-      // Use calculation from backend
       setCalculations({
         totalMTM: calc.summary.totalMTM,
         federalTax: calc.summary.federalTax,
@@ -21,6 +20,38 @@ export default function TaxResults({ onNavigate }) {
       });
     }
   }, []);
+
+  const handleDownloadPDF = async (formType) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/forms/generate-${formType.toLowerCase()}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: user?.email || 'User Name',
+          ssn: 'XXX-XX-XXXX',
+          funds: funds,
+          mtmGain: calculations.totalMTM,
+          totalIncome: calculations.totalMTM,
+          taxableIncome: calculations.totalMTM,
+          federalTax: calculations.federalTax,
+          withholding: 0
+        })
+      });
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${formType}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Error downloading PDF');
+    }
+  };
 
   if (!calculations) {
     return (
@@ -85,18 +116,33 @@ export default function TaxResults({ onNavigate }) {
           </div>
         </div>
 
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <button
+            onClick={() => handleDownloadPDF('1040')}
+            className="bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-semibold text-sm"
+          >
+            📄 Form 1040
+          </button>
+          <button
+            onClick={() => handleDownloadPDF('8621')}
+            className="bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-semibold text-sm"
+          >
+            📄 Form 8621
+          </button>
+          <button
+            onClick={() => handleDownloadPDF('1118')}
+            className="bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-semibold text-sm"
+          >
+            📄 Form 1118
+          </button>
+        </div>
+
         <div className="flex gap-4">
           <button
             onClick={() => onNavigate('dashboard')}
             className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 rounded-lg font-semibold"
           >
             Back to Dashboard
-          </button>
-          <button
-            onClick={() => alert('PDF download coming next!')}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold"
-          >
-            Download Forms (PDF)
           </button>
         </div>
       </div>
