@@ -3,6 +3,7 @@ import React from 'react';
 export default function Dashboard({ user, onNavigate, onLogout }) {
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <div className="bg-white shadow">
         <div className="max-w-6xl mx-auto px-4 py-6 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">NRI Tax App</h1>
@@ -18,33 +19,49 @@ export default function Dashboard({ user, onNavigate, onLogout }) {
         </div>
       </div>
 
+      {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 py-12">
         <h2 className="text-2xl font-bold mb-8">Tax Year 2025</h2>
 
+        {/* Status Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-gray-600 text-sm font-semibold mb-2">FILING STATUS</h3>
+            <h3 className="text-gray-600 text-sm font-semibold mb-2">
+              FILING STATUS
+            </h3>
             <p className="text-2xl font-bold text-blue-600">In Progress</p>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-gray-600 text-sm font-semibold mb-2">ESTIMATED TAX</h3>
+            <h3 className="text-gray-600 text-sm font-semibold mb-2">
+              ESTIMATED TAX
+            </h3>
             <p className="text-2xl font-bold text-green-600">$0.00</p>
             <p className="text-xs text-gray-500 mt-1">Upload data to calculate</p>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-gray-600 text-sm font-semibold mb-2">DOCUMENTS READY</h3>
+            <h3 className="text-gray-600 text-sm font-semibold mb-2">
+              DOCUMENTS READY
+            </h3>
             <p className="text-2xl font-bold text-orange-600">0/4</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        {/* Action Buttons */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <button
             onClick={() => onNavigate('upload')}
             className="bg-blue-600 hover:bg-blue-700 text-white p-8 rounded-lg text-center font-semibold text-lg transition"
           >
             📤 Upload Mutual Funds
+          </button>
+
+          <button
+            onClick={() => onNavigate('fileupload')}
+            className="bg-purple-600 hover:bg-purple-700 text-white p-8 rounded-lg text-center font-semibold text-lg transition"
+          >
+            📁 Upload CSV/Excel
           </button>
 
           <button
@@ -55,6 +72,7 @@ export default function Dashboard({ user, onNavigate, onLogout }) {
           </button>
         </div>
 
+        {/* Compliance Calendar */}
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-xl font-bold mb-4">Compliance Calendar</h3>
           <div className="space-y-3">

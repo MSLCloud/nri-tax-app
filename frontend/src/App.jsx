@@ -1,19 +1,30 @@
 import React, { useState, useEffect } from 'react';
+import { getCurrentUser, signOut } from './utils/supabaseClient';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import MFUpload from './components/MFUpload';
 import TaxResults from './components/TaxResults';
+import FileUpload from './components/FileUpload';
 import './App.css';
 
 function App() {
   const [user, setUser] = useState(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    const checkUser = async () => {
+      const { data } = await getCurrentUser();
+      if (data.session) {
+        setUser({
+          email: data.session.user.email,
+          id: data.session.user.id
+        });
+      }
+      setLoading(false);
+    };
+    
+    checkUser();
   }, []);
 
   const handleLogin = (userData) => {
@@ -21,9 +32,8 @@ function App() {
     setCurrentPage('dashboard');
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('funds');
+  const handleLogout = async () => {
+    await signOut();
     setUser(null);
     setCurrentPage('login');
   };
@@ -31,6 +41,14 @@ function App() {
   const handleNavigate = (page) => {
     setCurrentPage(page);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-lg text-gray-600">Loading...</p>
+      </div>
+    );
+  }
 
   if (!user) {
     return <Login onLogin={handleLogin} />;
@@ -46,10 +64,13 @@ function App() {
         />
       )}
       {currentPage === 'upload' && (
-        <MFUpload onNavigate={handleNavigate} />
+        <MFUpload onNavigate={handleNavigate} user={user} />
+      )}
+      {currentPage === 'fileupload' && (
+        <FileUpload onNavigate={handleNavigate} />
       )}
       {currentPage === 'results' && (
-        <TaxResults onNavigate={handleNavigate} />
+        <TaxResults onNavigate={handleNavigate} user={user} />
       )}
     </div>
   );

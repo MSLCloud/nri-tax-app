@@ -1,16 +1,41 @@
 import React, { useState } from 'react';
+import { signUp, signIn } from '../utils/supabaseClient';
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignup, setIsSignup] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (email && password) {
-      localStorage.setItem('user', JSON.stringify({ email, password }));
-      onLogin({ email, password });
+    setLoading(true);
+    setError('');
+
+    try {
+      let result;
+      
+      if (isSignup) {
+        result = await signUp(email, password);
+      } else {
+        result = await signIn(email, password);
+      }
+
+      if (result.error) {
+        setError(result.error.message);
+      } else {
+        // Success - call onLogin with user data
+        onLogin({
+          email: result.data.user.email,
+          id: result.data.user.id
+        });
+      }
+    } catch (err) {
+      setError('Authentication failed');
     }
+
+    setLoading(false);
   };
 
   return (
@@ -22,6 +47,12 @@ export default function Login({ onLogin }) {
         <p className="text-center text-gray-600 mb-8">
           India-US Tax Filing Made Simple
         </p>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -54,17 +85,25 @@ export default function Login({ onLogin }) {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition disabled:opacity-50"
           >
-            {isSignup ? 'Sign Up' : 'Login'}
+            {loading ? 'Loading...' : (isSignup ? 'Sign Up' : 'Login')}
           </button>
         </form>
 
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <p className="text-xs text-gray-600">
-            <strong>Demo:</strong> Use any email and password to test
-          </p>
-        </div>
+        <p className="text-center mt-6 text-gray-600">
+          {isSignup ? 'Already have account?' : "Don't have account?"}{' '}
+          <button
+            onClick={() => {
+              setIsSignup(!isSignup);
+              setError('');
+            }}
+            className="text-blue-600 hover:underline font-semibold"
+          >
+            {isSignup ? 'Login' : 'Sign Up'}
+          </button>
+        </p>
       </div>
     </div>
   );
