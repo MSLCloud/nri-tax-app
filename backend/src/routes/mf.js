@@ -1,12 +1,15 @@
 const express = require('express');
 const multer = require('multer');
 const XLSX = require('xlsx');
+const axios = require('axios');
+const pdfParse = require('pdf-parse');
 const {
   buildYearlyPositions,
   computeMtmSummary,
   normalizeYearEndNavFx,
   parseTransactionsFromRaw
 } = require('../utils/mtm-engine');
+const { parseKfintechStatement } = require('../utils/kfintech-pdf-parser');
 
 const router = express.Router();
 const upload = multer({ 
@@ -91,6 +94,87 @@ router.post('/upload-kfintech', upload.fields([
 
   } catch (error) {
     console.error('Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/mf/parse-kfintech-pdf
+ * Accept a Kfintech PDF statement, extract text via pdf-parse or OCR.Space fallback,
+ * then parse structured data using kfintech-pdf-parser.
+ */
+router.post('/parse-kfintech-pdf', upload.single('pdf'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'PDF file is required. Upload as "pdf" field.' });
+    }
+
+    console.log(`[parse-kfintech-pdf] Received PDF: ${req.file.originalname} (${req.file.size} bytes)`);
+
+    const pdfBuffer = req.file.buffer;
+    let pdfText = '';
+
+    // Step 1: Try extracting text directly using pdf-parse
+    try {
+      console.log('[parse-kfintech-pdf] Attempting text extraction with pdf-parse...');
+      const pdfData = await pdfParse(pdfBuffer);
+      pdfText = (pdfData.text || '').trim();
+      console.log(`[parse-kfintech-pdf] pdf-parse extracted ${pdfText.length} characters from ${pdfData.numpages} pages`);
+    } catch (parseErr) {
+      console.warn('[parse-kfintech-pdf] pdf-parse failed:', parseErr.message);
+    }
+
+    // Step 2: If text extraction failed or returned empty, fall back to OCR.Space
+    if (!pdfText) {
+      console.log('[parse-kfintech-pdf] Text extraction empty/failed, falling back to OCR.Space...');
+
+      const base64Pdf = pdfBuffer.toString('base64');
+      const ocrPayload = {
+        apikey: 'K87899142372',
+        base64Image: `data:application/pdf;base64,${base64Pdf}`,
+        isOverlayRequired: false
+      };
+
+      try {
+        const ocrResponse = await axios.post('https://api.ocr.space/parse/image', ocrPayload, {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          timeout: 60000
+        });
+
+        const ocrData = ocrResponse.data;
+        if (ocrData && ocrData.ParsedResults && ocrData.ParsedResults.length > 0) {
+          pdfText = ocrData.ParsedResults.map(r => r.ParsedText || '').join('\n').trim();
+          console.log(`[parse-kfintech-pdf] OCR.Space extracted ${pdfText.length} characters`);
+        } else {
+          const errorMsg = ocrData?.ErrorMessage || 'No parsed results returned';
+          console.error('[parse-kfintech-pdf] OCR.Space returned no results:', errorMsg);
+          return res.status(500).json({
+            error: 'OCR failed to extract text from PDF',
+            details: errorMsg
+          });
+        }
+      } catch (ocrErr) {
+        console.error('[parse-kfintech-pdf] OCR.Space request failed:', ocrErr.message);
+        return res.status(500).json({
+          error: 'OCR service request failed',
+          details: ocrErr.message
+        });
+      }
+    }
+
+    // Step 3: Parse the extracted text
+    if (!pdfText) {
+      return res.status(500).json({ error: 'Could not extract any text from the PDF' });
+    }
+
+    console.log('[parse-kfintech-pdf] Parsing extracted text with kfintech-pdf-parser...');
+    const parsed = parseKfintechStatement(pdfText);
+    console.log(`[parse-kfintech-pdf] Parsed ${parsed.funds.length} funds, ${parsed.transactions.length} transactions`);
+
+    res.json({ success: true, parsed });
+
+  } catch (error) {
+    console.error('[parse-kfintech-pdf] Error:', error);
     res.status(500).json({ error: error.message });
   }
 });
