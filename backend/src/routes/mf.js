@@ -130,7 +130,7 @@ router.post('/parse-kfintech-pdf', upload.single('pdf'), async (req, res) => {
 
       const base64Pdf = pdfBuffer.toString('base64');
       const ocrPayload = {
-        apikey: 'K87899142372',
+        apikey: process.env.OCR_SPACE_API_KEY || '',
         base64Image: `data:application/pdf;base64,${base64Pdf}`,
         isOverlayRequired: false
       };
