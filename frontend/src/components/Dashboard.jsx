@@ -119,7 +119,7 @@ export default function Dashboard({ user, onNavigate, onLogout }) {
                     ? 'bg-white hover:shadow-lg cursor-pointer'
                     : 'bg-gray-100 opacity-60'
                 }`}
-                onClick={() => module.status === 'active' && onNavigate('upload')}
+                onClick={() => module.status === 'active' && onNavigate(module.id === 'mf' ? 'kfintech-pdf' : 'upload')}
               >
                 <div className="flex items-start justify-between mb-4">
                   <span className="text-4xl">{module.icon}</span>
@@ -199,10 +199,10 @@ export default function Dashboard({ user, onNavigate, onLogout }) {
           <h3 className="text-2xl font-bold mb-4">🚀 Get Started</h3>
           <p className="mb-6">Add your income sources to auto-calculate your US-India tax liability</p>
           <button
-            onClick={() => onNavigate('mf')}
+            onClick={() => onNavigate('kfintech-pdf')}
             className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100"
           >
-            Start with Mutual Funds
+            Upload Kfintech PDF
           </button>
         </div>
       </div>
