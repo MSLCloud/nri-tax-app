@@ -119,7 +119,7 @@ export default function Dashboard({ user, onNavigate, onLogout }) {
                     ? 'bg-white hover:shadow-lg cursor-pointer'
                     : 'bg-gray-100 opacity-60'
                 }`}
-                onClick={() => module.status === 'active' && onNavigate(module.id)}
+                onClick={() => module.status === 'active' && onNavigate('upload')}
               >
                 <div className="flex items-start justify-between mb-4">
                   <span className="text-4xl">{module.icon}</span>
