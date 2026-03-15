@@ -5,6 +5,7 @@ import Dashboard from './components/Dashboard';
 import MFUpload from './components/MFUpload';
 import TaxResults from './components/TaxResults';
 import FileUpload from './components/FileUpload';
+import KfintechPdfUpload from './components/KfintechPdfUpload';
 import './App.css';
 
 function App() {
@@ -72,6 +73,9 @@ function App() {
       )}
       {currentPage === 'results' && (
         <TaxResults onNavigate={handleNavigate} user={user} />
+      )}
+      {currentPage === 'kfintech-pdf' && (
+        <KfintechPdfUpload onNavigate={handleNavigate} />
       )}
     </div>
   );
