@@ -126,6 +126,12 @@ router.post('/parse-kfintech-pdf', upload.single('pdf'), async (req, res) => {
 
     // Step 2: If text extraction failed or returned empty, fall back to OCR.Space
     if (!pdfText) {
+      if (!process.env.OCR_SPACE_API_KEY) {
+        return res.status(500).json({
+          error: 'PDF text extraction failed and OCR fallback is not configured (OCR_SPACE_API_KEY not set)'
+        });
+      }
+
       console.log('[parse-kfintech-pdf] Text extraction empty/failed, falling back to OCR.Space...');
 
       const base64Pdf = pdfBuffer.toString('base64');
